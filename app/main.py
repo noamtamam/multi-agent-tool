@@ -31,7 +31,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title="Multi-agent tool", lifespan=lifespan)
 
 
-@app.post("/task", response_model=TaskStoredResponse, status_code=201)
+@app.post("/tasks", response_model=TaskStoredResponse, status_code=201)
 def create_task(
     body: TaskCreateRequest,
     db: Session = Depends(get_session),
