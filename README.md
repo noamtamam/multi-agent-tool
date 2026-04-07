@@ -35,7 +35,7 @@ flowchart LR
   API -->|save_task_record| DB[(SQLite)]
   API -->|optional append_jsonl_audit| JSONL[(task_events.jsonl)]
   API -->|201 + JSON| U
-  U -->|GET /tasks/{id}| API
+  U -->|GET /tasks/:task_id| API
   API -->|load TaskRecord| DB
   API -->|200 + JSON| U
 ```
