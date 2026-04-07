@@ -152,7 +152,7 @@ Important:
 **Request**
 
 ```json
-{ "task": "What is (2+3)*4? Reply with the numeric result." }
+{ "task": "hey, what's (2+3)*4?" }
 ```
 
 **Expected response (representative)**
@@ -161,10 +161,10 @@ Important:
 {
   "task_id": "…",
   "status": "completed",
-  "user_message": "What is (2+3)*4? Reply with the numeric result.",
+  "user_message": "hey, what's (2+3)*4?",
   "final_answer": "20",
   "trace": [
-    { "type": "reasoning", "content": "I'll compute it using the calculator tool.", "round": 0, "timestamp": "…" },
+    { "type": "reasoning", "content": "I'll calculate that.", "round": 0, "timestamp": "…" },
     {
       "type": "tool_call",
       "tool_name": "calculator",
@@ -189,7 +189,7 @@ Important:
 **Request**
 
 ```json
-{ "task": "Use the unit_converter tool: convert 1 km to meters. Then state the answer in plain text." }
+{ "task": "quick one: how many meters are in 1 km?" }
 ```
 
 **Expected trace highlight**
@@ -205,7 +205,7 @@ Important:
 
 ```json
 {
-  "task": "First use the calculator to compute 2**10. Then use unit_converter to convert that many meters to kilometers. Summarize both results."
+  "task": "What is 2**10, and how many kilometers is that in meters?"
 }
 ```
 
@@ -220,7 +220,7 @@ Important:
 **Request**
 
 ```json
-{ "task": "What's the current weather in Tokyo? Use the weather tool." }
+{ "task": "what's the weather in tokyo right now?" }
 ```
 
 **Expected trace highlight**
@@ -236,7 +236,7 @@ Important:
 **Request**
 
 ```json
-{ "task": "Use web_search: summarize the top 3 results for 'FastAPI dependency injection'." }
+{ "task": "can you look up 'FastAPI dependency injection' and give me the top 3 links + a quick summary?" }
 ```
 
 **Expected trace highlight**
