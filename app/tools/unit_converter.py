@@ -16,16 +16,21 @@ def convert_units(
     category: auto | length | weight | temperature | currency
     For currency, from_unit/to_unit are ISO codes (USD, EUR, GBP, ...).
     """
-    fu = (from_unit or "").strip().lower()
-    tu = (to_unit or "").strip().lower()
+    # Don't force-case physical units: Pint unit symbols can be case-sensitive (e.g. "degC").
+    fu = (from_unit or "").strip()
+    tu = (to_unit or "").strip()
     cat = (category or "auto").strip().lower()
     try:
         v = float(value)
     except (TypeError, ValueError):
         return "Error: value must be a number"
 
-    if cat == "currency" or (cat == "auto" and len(fu) == 3 and len(tu) == 3 and fu.isalpha() and tu.isalpha()):
-        return _convert_currency(v, fu, tu)
+    fu_code = fu.upper()
+    tu_code = tu.upper()
+    if cat == "currency" or (
+        cat == "auto" and len(fu_code) == 3 and len(tu_code) == 3 and fu_code.isalpha() and tu_code.isalpha()
+    ):
+        return _convert_currency(v, fu_code, tu_code)
 
     try:
         q_from = _ureg.Quantity(v, fu)
