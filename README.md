@@ -67,6 +67,8 @@ Create or edit `.env` in the project root:
 OPENAI_API_KEY=your_key_here
 OPENAI_MODEL=gpt-4o-mini
 DATABASE_URL=sqlite:///./data/agent.db
+REQUEST_TIMEOUT_SECONDS=120.0
+# Optional (defaults to data/task_events.jsonl). Set to empty string to disable JSONL auditing.
 TASK_JSONL_PATH=data/task_events.jsonl
 ```
 
