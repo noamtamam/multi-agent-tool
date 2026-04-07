@@ -1,4 +1,41 @@
-/venv/
+# Python virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Secrets / local overrides
 .env
-/.pytest_cache/
-/.idea/
+.env.*
+!.env.example
+
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# IDEs
+.idea/
+.vscode/
+
+# OS junk
+Thumbs.db
+Desktop.ini
+
+# App runtime data (SQLite + JSONL audit logs)
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.jsonl
