@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
@@ -31,7 +32,13 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title="Multi-agent tool", lifespan=lifespan)
 
 
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
 @app.post("/tasks", response_model=TaskStoredResponse, status_code=201)
+@app.post("/task", response_model=TaskStoredResponse, status_code=201)  # backwards-compatible alias
 def create_task(
     body: TaskCreateRequest,
     db: Session = Depends(get_session),
