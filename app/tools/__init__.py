@@ -1,4 +1,3 @@
-import asyncio
 import json
 from collections.abc import Callable
 from typing import Any
@@ -23,7 +22,7 @@ def _run_tool(name: str, arguments: dict[str, Any]) -> str:
         return evaluate_expression(str(arguments.get("expression", "")))
     if name == "weather":
         city = str(arguments.get("city", ""))
-        return asyncio.run(fetch_weather(city))
+        return fetch_weather(city)
     if name == "web_search":
         q = str(arguments.get("query", ""))
         mr = arguments.get("max_results", 5)
@@ -55,7 +54,7 @@ def dispatch_tool_call(name: str, arguments_json: str) -> str:
 
 TOOL_REGISTRY: dict[str, Callable[..., Any]] = {
     "calculator": lambda **kw: evaluate_expression(str(kw.get("expression", ""))),
-    "weather": lambda **kw: asyncio.run(fetch_weather(str(kw.get("city", "")))),
+    "weather": lambda **kw: fetch_weather(str(kw.get("city", ""))),
     "web_search": lambda **kw: search_web(str(kw.get("query", "")), int(kw.get("max_results", 5) or 5)),
     "unit_converter": lambda **kw: convert_units(
         float(kw["value"]),

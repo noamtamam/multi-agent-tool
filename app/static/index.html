@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multi-agent tool</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4d;
+      --text: #e7ecf3;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --ok: #22c55e;
+      --fail: #ef4444;
+      --reasoning: #6366f1;
+      --tool: #f59e0b;
+      --usage: #14b8a6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+    h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 0.25rem; }
+    .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.35rem; }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      resize: vertical;
+    }
+    textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+    .row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; align-items: center; }
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.25rem;
+      border-radius: 8px;
+      font: inherit;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    button:hover:not(:disabled) { background: var(--accent-hover); }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    button.secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    input[type="text"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+    }
+    .panel {
+      margin-top: 1.5rem;
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .panel h2 { font-size: 1rem; margin: 0 0 0.75rem; font-weight: 600; }
+    .hidden { display: none !important; }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+    .badge.completed { background: rgba(34, 197, 94, 0.2); color: var(--ok); }
+    .badge.failed { background: rgba(239, 68, 68, 0.2); color: var(--fail); }
+    .meta { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+    .answer {
+      white-space: pre-wrap;
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      background: var(--bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .error-box {
+      color: var(--fail);
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-top: 0.75rem;
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+    }
+    .trace { list-style: none; padding: 0; margin: 0; }
+    .trace li {
+      border-left: 3px solid var(--border);
+      padding: 0.75rem 0 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+    .trace li.reasoning { border-left-color: var(--reasoning); }
+    .trace li.tool_call { border-left-color: var(--tool); }
+    .trace li.usage { border-left-color: var(--usage); }
+    .step-type {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    .step-body { margin-top: 0.35rem; font-size: 0.9rem; }
+    pre {
+      margin: 0.35rem 0 0;
+      padding: 0.5rem;
+      background: var(--bg);
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.8rem;
+    }
+    .spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.35rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #status-msg { color: var(--muted); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Multi-agent tool</h1>
+    <p class="sub">Submit a task and inspect the final answer and reasoning trace.</p>
+
+    <form id="task-form">
+      <label for="task-input">Your task</label>
+      <textarea id="task-input" placeholder="e.g. What is (2+3)*4?" required></textarea>
+      <div class="row">
+        <button type="submit" id="submit-btn">Run task</button>
+        <span id="status-msg"></span>
+      </div>
+    </form>
+
+    <div class="panel">
+      <label for="task-id-input">Load a past task by ID</label>
+      <div class="row" style="margin-top: 0.35rem;">
+        <input type="text" id="task-id-input" placeholder="UUID from a previous run" />
+        <button type="button" class="secondary" id="load-btn">Load</button>
+      </div>
+    </div>
+
+    <div id="results" class="hidden">
+      <div class="panel">
+        <h2>Result <span id="status-badge" class="badge"></span></h2>
+        <p class="meta" id="result-meta"></p>
+        <div id="error-box" class="error-box hidden"></div>
+        <div id="answer-block" class="hidden">
+          <strong>Final answer</strong>
+          <div class="answer" id="final-answer"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Reasoning trace</h2>
+        <ul class="trace" id="trace-list"></ul>
+        <p id="trace-empty" class="meta hidden">No trace steps recorded.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("task-form");
+    const taskInput = document.getElementById("task-input");
+    const submitBtn = document.getElementById("submit-btn");
+    const loadBtn = document.getElementById("load-btn");
+    const taskIdInput = document.getElementById("task-id-input");
+    const statusMsg = document.getElementById("status-msg");
+    const results = document.getElementById("results");
+
+    function setLoading(on, text) {
+      submitBtn.disabled = on;
+      loadBtn.disabled = on;
+      statusMsg.innerHTML = on
+        ? `<span class="spinner"></span>${text || "Working…"}`
+        : "";
+    }
+
+    function esc(s) {
+      const d = document.createElement("div");
+      d.textContent = s == null ? "" : String(s);
+      return d.innerHTML;
+    }
+
+    function renderStep(step, i) {
+      const li = document.createElement("li");
+      const type = step.type || "unknown";
+      li.className = type;
+      let body = "";
+
+      if (type === "reasoning") {
+        body = `<div class="step-body">${esc(step.content || "(no content)")}</div>`;
+      } else if (type === "tool_call") {
+        body = `
+          <div class="step-body"><strong>${esc(step.tool_name)}</strong></div>
+          <pre>${esc(JSON.stringify(step.arguments, null, 2))}</pre>
+          <div class="step-body">→ ${esc(step.result)}</div>`;
+      } else if (type === "usage") {
+        body = `<div class="step-body">
+          prompt: ${esc(step.prompt_tokens)} · completion: ${esc(step.completion_tokens)} · total: ${esc(step.total_tokens)}
+        </div>`;
+      } else {
+        body = `<pre>${esc(JSON.stringify(step, null, 2))}</pre>`;
+      }
+
+      const round = step.round != null ? ` · round ${step.round}` : "";
+      const ts = step.timestamp ? ` · ${esc(step.timestamp)}` : "";
+      li.innerHTML = `
+        <span class="step-type">${esc(type)}${round}${ts}</span>
+        ${body}`;
+      return li;
+    }
+
+    function showResult(data) {
+      results.classList.remove("hidden");
+      const badge = document.getElementById("status-badge");
+      badge.textContent = data.status;
+      badge.className = "badge " + data.status;
+
+      const parts = [
+        `Task ID: ${data.task_id}`,
+        data.created_at ? `Created: ${new Date(data.created_at).toLocaleString()}` : null,
+        data.latency_ms != null ? `Latency: ${data.latency_ms.toFixed(1)} ms` : null,
+        data.total_tokens != null ? `Tokens: ${data.total_tokens} (${data.prompt_tokens} in / ${data.completion_tokens} out)` : null,
+      ].filter(Boolean);
+      document.getElementById("result-meta").textContent = parts.join(" · ");
+
+      const errBox = document.getElementById("error-box");
+      const answerBlock = document.getElementById("answer-block");
+      if (data.error) {
+        errBox.textContent = data.error;
+        errBox.classList.remove("hidden");
+      } else {
+        errBox.classList.add("hidden");
+      }
+
+      if (data.final_answer) {
+        document.getElementById("final-answer").textContent = data.final_answer;
+        answerBlock.classList.remove("hidden");
+      } else {
+        answerBlock.classList.add("hidden");
+      }
+
+      const list = document.getElementById("trace-list");
+      const empty = document.getElementById("trace-empty");
+      list.innerHTML = "";
+      const trace = data.trace || [];
+      if (trace.length === 0) {
+        empty.classList.remove("hidden");
+      } else {
+        empty.classList.add("hidden");
+        trace.forEach((step, i) => list.appendChild(renderStep(step, i)));
+      }
+
+      taskIdInput.value = data.task_id;
+      history.replaceState(null, "", "?task_id=" + encodeURIComponent(data.task_id));
+    }
+
+    async function fetchTask(id) {
+      const res = await fetch(`/tasks/${encodeURIComponent(id)}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || res.statusText || "Task not found");
+      }
+      return res.json();
+    }
+
+    async function submitTask(task) {
+      const res = await fetch("/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.detail || res.statusText || "Request failed");
+      }
+      return data;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const task = taskInput.value.trim();
+      if (!task) return;
+      setLoading(true, "Running agent (this may take a minute)…");
+      try {
+        showResult(await submitTask(task));
+      } catch (err) {
+        alert(err.message || String(err));
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    loadBtn.addEventListener("click", async () => {
+      const id = taskIdInput.value.trim();
+      if (!id) return;
+      setLoading(true, "Loading task…");
+      try {
+        showResult(await fetchTask(id));
+      } catch (err) {
+        alert(err.message || String(err));
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    const params = new URLSearchParams(location.search);
+    const fromUrl = params.get("task_id");
+    if (fromUrl) {
+      taskIdInput.value = fromUrl;
+      loadBtn.click();
+    }
+  </script>
+</body>
+</html>

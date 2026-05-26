@@ -5,8 +5,11 @@ from __future__ import annotations
 import logging
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from app.agent import run_agent_task
@@ -30,8 +33,17 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(title="Multi-agent tool", lifespan=lifespan)
 
+_STATIC_DIR = Path(__file__).resolve().parent / "static"
+if _STATIC_DIR.is_dir():
+    app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
-@app.post("/task", response_model=TaskStoredResponse, status_code=201)
+
+@app.get("/")
+def ui() -> FileResponse:
+    return FileResponse(_STATIC_DIR / "index.html")
+
+
+@app.post("/tasks", response_model=TaskStoredResponse, status_code=201)
 def create_task(
     body: TaskCreateRequest,
     db: Session = Depends(get_session),
